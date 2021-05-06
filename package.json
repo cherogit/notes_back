@@ -2,5 +2,18 @@
   "name": "notes_back",
   "version": "1.0.0",
   "main": "index.js",
-  "license": "MIT"
+  "scripts": {
+    "dev": "nodemon server.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@koa/multer": "^3.0.0",
+    "dotenv": "^8.6.0",
+    "koa": "^2.13.1",
+    "koa-router": "^10.0.0",
+    "mongodb": "^3.6.6"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.7"
+  }
 }
