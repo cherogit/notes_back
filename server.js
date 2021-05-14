@@ -7,9 +7,12 @@ const Koa = require('koa')
 const {router} = require('./routes/router')
 const {HOST, PORT} = require('./config')
 const {getDb} = require('./db')
-const {COOKIE_NAME} = require('/constants')
+const {COOKIE_NAME} = require('./constants')
+const bodyParser = require('koa-bodyparser')
 
 const app = new Koa()
+
+app.use(bodyParser())
 
 app.use(async (ctx, next) => {
     try {
@@ -60,9 +63,12 @@ app.use(async (ctx, next) => {
 })
 
 router.get('/', async ctx => {
+    console.log('homePage')
+
     ctx.body = 'homePage'
 })
 
+require('./routes/users')
 require('./routes/notes')
 
 
