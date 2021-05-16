@@ -6,6 +6,7 @@ const dbConfig = {
 }
 
 const MongoClient = require('mongodb').MongoClient
+/** @type MongoClient.prototype*/
 let db = null
 
 MongoClient.connect(
