@@ -4,10 +4,10 @@ const {getDb} = require('../db')
 const {COOKIE_NAME} = require('../constants')
 const {hashPassword} = require('../utils/hashPassword')
 
-router.get('/registration', async ctx => {
-    console.log('registrationPage')
-
-    ctx.body = 'registrationPage'
+router.get('/self', async ctx => {
+    ctx.body = {
+        userName: ctx.user.userName
+    }
 })
 
 router.post('/registration', upload.none(), async ctx => {
@@ -24,12 +24,6 @@ router.post('/registration', upload.none(), async ctx => {
     console.log(`Welcome, ${userName}`)
 
     ctx.body = `Welcome, ${userName}`
-})
-
-router.get('/auth', async ctx => {
-    console.log('Authorization')
-
-    ctx.body = 'Authorization'
 })
 
 router.post('/auth', upload.none(), async ctx => {
@@ -65,7 +59,7 @@ router.post('/auth', upload.none(), async ctx => {
         httpOnly: true
     })
 
-    ctx.body = 'auth completed'
+    ctx.body = {ok: 1}
     console.log('auth completed')
 })
 

@@ -29,8 +29,6 @@ router.get('/note/:id', async ctx => {
     const db = getDb()
     const id = ctx.params.id
 
-    // Почему именно params?
-
     if (!checkers.objectIsValid(id)) ctx.throw(400, 'is is not valid')
 
     const note = await db.collection(`test`).findOne({_id: ObjectId(id)})
@@ -45,8 +43,6 @@ router.get('/note/:id', async ctx => {
 
         ctx.throw(400, `note with id ${id} is not found`)
     }
-
-
 })
 
 router.get('/update/:id', async ctx => {

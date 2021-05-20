@@ -9,10 +9,12 @@ const {HOST, PORT} = require('./config')
 const {getDb} = require('./db')
 const {COOKIE_NAME} = require('./constants')
 const bodyParser = require('koa-bodyparser')
+const cors = require('@koa/cors')
 
 const app = new Koa()
 
 app.use(bodyParser())
+app.use(cors())
 
 app.use(async (ctx, next) => {
     try {
@@ -56,7 +58,10 @@ app.use(async (ctx, next) => {
         })
 
     if (!['/auth', '/registration'].includes(ctx.path)) {
-        if (!ctx.user) ctx.throw(403, 'You are not logged in, please log in')
+        if (!ctx.user) {
+            ctx.body = 'You are not logged in, please log in'
+            ctx.throw(403, 'You are not logged in, please log in')
+        }
     }
 
     await next()
@@ -65,7 +70,7 @@ app.use(async (ctx, next) => {
 router.get('/', async ctx => {
     console.log('homePage')
 
-    ctx.body = 'homePage'
+    ctx.body = {ok: 1}
 })
 
 require('./routes/users')
