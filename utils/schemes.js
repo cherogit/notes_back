@@ -34,4 +34,40 @@ const noteCreationScheme = {
     required: ['title', 'note']
 }
 
+const userRegistrationScheme = {
+    $async: true,
+    type: 'object',
+    properties: {
+        login: {
+            type: 'string',
+            minLength: 2,
+            maxLength: 16
+        },
+        userName: {
+            type: 'string',
+        },
+        password: {
+            type: 'string',
+            minLength: 3,
+        },
+    },
+    required: ['login', 'userName', 'password']
+}
+
+const userAuthorizationScheme = {
+    $async: true,
+    type: 'object',
+    properties: {
+        login: {
+            type: 'string',
+        },
+        password: {
+            type: 'string',
+        },
+    },
+    required: ['login', 'password']
+}
+
 exports.noteValidator = ajv.compile(noteCreationScheme)
+exports.registrationValidator = ajv.compile(userRegistrationScheme)
+exports.authorizationValidator = ajv.compile(userAuthorizationScheme)

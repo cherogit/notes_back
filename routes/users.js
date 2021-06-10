@@ -2,65 +2,46 @@ const {router, upload} = require('./router')
 const ObjectId = require('mongodb').ObjectID
 const {getDb} = require('../db')
 const {COOKIE_NAME} = require('../constants')
-const {hashPassword} = require('../utils/hashPassword')
+const validators = require('../utils/schemes')
+const {createUser, checkUserLoginAndPasswordAndGetUser, generateAndSafeCookie} = require('../processors')
 
 router.get('/self', async ctx => {
+    console.log(ctx.user)
+
     ctx.body = {
         userName: ctx.user.userName
     }
 })
 
 router.post('/registration', upload.none(), async ctx => {
-    const db = getDb()
+    await validators.registrationValidator(ctx.request.body)
+
     const {login, userName, password} = ctx.request.body
-    const existingLogin = await db.collection(`users`).findOne({login})
-
-    if (existingLogin) ctx.throw(409, `User с таким login уже существует.`)
-
-    const hashedPassword = await hashPassword(password)
-
-    await db.collection(`users`).insertOne({login, userName, hashedPassword, cookies: {}})
-
-    console.log(`Welcome, ${userName}`)
-
-    ctx.body = `Welcome, ${userName}`
-})
-
-router.post('/auth', upload.none(), async ctx => {
-    const db = getDb()
-    const {login, password} = ctx.request.body
-    const user = await db.collection(`users`).findOne({login: login})
-
-    if (!user) ctx.throw(403, 'User is not defined')
-
-    const hashedPassword = await hashPassword(password)
-
-    if (hashedPassword !== user.hashedPassword) ctx.throw(403, 'Неверный пароль')
-
-    const cookie = {
-        name: COOKIE_NAME,
-        value: Math.random().toString().slice(2),
-        expires: new Date(Date.now() + 1000 * 86400 * 365)
-    }
-
-    await db
-        .collection(`users`)
-        .updateOne(
-            {login: login},
-            {
-                $set: {
-                    [`cookies.${cookie.value}`]: cookie
-                }
-            }
-        )
+    const user = await createUser(login, userName, password)
+    const cookie = await generateAndSafeCookie(user._id)
 
     ctx.cookies.set(cookie.name, cookie.value, {
         expires: cookie.expires,
-        httpOnly: true
     })
 
-    ctx.body = {ok: 1}
+    console.log(`Welcome, ${user.userName}`)
+
+    ctx.body = user
+})
+
+router.post('/auth', upload.none(), async ctx => {
+    await validators.authorizationValidator(ctx.request.body)
+
+    const {login, password} = ctx.request.body
+    const user = await checkUserLoginAndPasswordAndGetUser(login, password)
+    const cookie = await generateAndSafeCookie(user._id)
+
+    ctx.cookies.set(cookie.name, cookie.value, {
+        expires: cookie.expires,
+    })
+
     console.log('auth completed')
+    ctx.body = user
 })
 
 router.get('/logout', async ctx => {

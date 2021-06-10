@@ -14,7 +14,8 @@ const cors = require('@koa/cors')
 const app = new Koa()
 
 app.use(bodyParser())
-app.use(cors())
+app.use(cors({credentials: true}))
+
 
 app.use(async (ctx, next) => {
     try {
@@ -32,6 +33,7 @@ app.use(async (ctx, next) => {
         }
 
         ctx.status = err.status || 500
+        ctx.body = err.message
 
         console.error(ctx.status)
     }
