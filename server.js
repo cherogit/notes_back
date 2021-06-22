@@ -10,6 +10,7 @@ const {getDb} = require('./db')
 const {COOKIE_NAME} = require('./constants')
 const bodyParser = require('koa-bodyparser')
 const cors = require('@koa/cors')
+const localize = require('ajv-i18n')
 
 const app = new Koa()
 
@@ -26,14 +27,25 @@ app.use(async (ctx, next) => {
             ctx.throw(404)
         }
     } catch (err) {
+        ctx.status = err.status || 500
+        ctx.body = {
+            error: {
+                status: err.status,
+                message: err.message
+            }
+        }
+
         if (err.errors) {
-            console.error(`validation errors:`, err.errors)
+            localize.ru(err.errors)
+
+            ctx.status = 400
+            ctx.body = {
+                message: 'validation errors',
+                errors: err.errors
+            }
         } else {
             console.error(err)
         }
-
-        ctx.status = err.status || 500
-        ctx.body = err.message
 
         console.error(ctx.status)
     }

@@ -1,3 +1,4 @@
+const ObjectId = require('mongodb').ObjectID
 const {getDb} = require('../db')
 const {throwApiError} = require('../utils')
 const {hashPassword} = require('../utils/hashPassword')
@@ -8,13 +9,12 @@ const getUser = exports.getUser = async (userId) => {
 
     const user = await db.collection(`users`).findOne({_id: userId}, {projection: {userName: 1}})
 
-    console.log(user)
+    console.log('getUser', user)
     return user
 }
 
 exports.checkUserLoginAndPasswordAndGetUser = async (login, password) => {
     const db = getDb()
-
     const user = await db.collection(`users`).findOne({login: login})
 
     if (!user) throwApiError(403, 'User is not defined')
@@ -42,7 +42,7 @@ exports.createUser = async (login, userName, password) => {
     return await getUser(result.ops[0]._id)
 }
 
-exports.generateAndSafeCookie = async (userId) => {
+exports.generateAndSaveCookie = async (userId) => {
     const db = getDb()
 
     const cookie = {
@@ -63,4 +63,21 @@ exports.generateAndSafeCookie = async (userId) => {
         )
 
     return cookie
+}
+
+exports.deleteCookie = async (userId, cookieValue) => {
+    const db = getDb()
+
+    await db
+        .collection(`users`)
+        .updateOne(
+            {
+                _id: ObjectId(userId)
+            },
+            {
+                $unset: {
+                    [`cookies.${cookieValue}`]: ''
+                }
+            }
+        )
 }

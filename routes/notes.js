@@ -15,7 +15,9 @@ router.get('/notes', async ctx => {
     const db = getDb()
     const dbNotes = await db.collection(`test`).find({}).toArray()
 
-    ctx.body = dbNotes
+    ctx.body = {
+        notes: dbNotes
+    }
     console.log('notes page')
 })
 
@@ -36,11 +38,6 @@ router.get('/note/:id', async ctx => {
     if (note) {
         ctx.body = note
     } else {
-        // let err = new Error('Page Not Found')
-        // err.statusCode = 404
-        // err.message = `note with id ${id} is not found`
-        // throw err
-
         ctx.throw(400, `note with id ${id} is not found`)
     }
 })
@@ -65,9 +62,7 @@ router.get('/update/:id', async ctx => {
 
 router.post('/note', upload.none(), async ctx => {
     const db = getDb()
-    const resultValidation = await validators.noteValidator(ctx.request.body)
-
-    if (!resultValidation) console.error(validators.noteValidator.errors)
+    await validators.noteValidator(ctx.request.body)
 
     const {title} = ctx.request.body
     const existingNote = await db.collection(`test`).findOne({title: title})
@@ -79,7 +74,6 @@ router.post('/note', upload.none(), async ctx => {
     const result = await db.collection(`test`).insertOne(ctx.request.body)
 
     ctx.body = result.ops[0]
-    // почему ops?
 
     console.log('create note completed')
 })
