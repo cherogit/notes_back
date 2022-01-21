@@ -1,19 +1,52 @@
 const {router, upload} = require('./router')
-const {COOKIE_NAME} = require('../constants')
+const {COOKIE_NAME, PERMISSIONS} = require('../constants')
 const validators = require('../utils/schemes')
+const {getRolesPermissions, checkPermissionByRoles} = require('../processors/permissions')
 const {
+    getAllUsersSanitized,
     createUser,
     checkUserLoginAndPasswordAndGetUser,
     generateAndSaveCookie,
-    deleteCookie
+    deleteCookie, updateNote, getNoteById
 } = require('../processors')
 
 router.get('/self', async ctx => {
-    console.log(ctx.user)
+    const permissions = await getRolesPermissions(ctx.user.roles)
 
     ctx.body = {
-        userName: ctx.user.userName
+        userName: ctx.user.userName,
+        permissions,
     }
+})
+
+router.get('/users', async ctx => {
+    const listOfUsers = await getAllUsersSanitized()
+
+    console.log(2, listOfUsers)
+
+    ctx.body = {
+        users: listOfUsers
+    }
+})
+
+router.put('/updateRoles', upload.none(), async ctx => {
+    const {id, roles} = ctx.request.body
+
+    console.log(id, roles)
+
+    ctx.body = {
+        ok: 1
+    }
+    // await checkPermissionByRoles(ctx.user.roles, PERMISSIONS.updateNote)
+    //
+    // await validators.noteValidator(ctx.request.body)
+    // const {id} = ctx.request.body
+    //
+    // await updateNote(ctx.request.body)
+    //
+    // const note = await getNoteById(id)
+    //
+    // ctx.body = {note}
 })
 
 router.post('/registration', upload.none(), async ctx => {
@@ -21,6 +54,7 @@ router.post('/registration', upload.none(), async ctx => {
 
     const {login, userName, password} = ctx.request.body
     const user = await createUser(login, userName, password)
+    console.log('user', user)
     const cookie = await generateAndSaveCookie(user._id)
 
     ctx.cookies.set(cookie.name, cookie.value, {

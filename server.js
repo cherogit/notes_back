@@ -11,6 +11,7 @@ const {COOKIE_NAME} = require('./constants')
 const bodyParser = require('koa-bodyparser')
 const cors = require('@koa/cors')
 const localize = require('ajv-i18n')
+const {throwApiError} = require('./utils')
 
 const app = new Koa()
 
@@ -24,7 +25,7 @@ app.use(async (ctx, next) => {
         const status = ctx.status || 404
 
         if (status === 404) {
-            ctx.throw(404)
+            throwApiError(404, 'page not found')
         }
     } catch (err) {
         ctx.status = err.status || 500
@@ -74,7 +75,7 @@ app.use(async (ctx, next) => {
     if (!['/auth', '/registration'].includes(ctx.path)) {
         if (!ctx.user) {
             ctx.body = 'You are not logged in, please log in'
-            ctx.throw(403, 'You are not logged in, please log in')
+            throwApiError(403, 'You are not logged in, please log in')
         }
     }
 

@@ -2,8 +2,10 @@ const {router, upload} = require('./router')
 const ObjectId = require('mongodb').ObjectID
 const {getDb} = require('../db')
 const {PERMISSIONS} = require('../constants')
-const {checkUserAccessRights} = require('../utils/permissions')
 const validators = require('../utils/schemes')
+const {checkPermissionByRoles} = require('../processors/permissions')
+const {throwApiError} = require('../utils')
+const {createNote, getNotes, getNoteById, updateNote, deleteNote} = require('../processors')
 
 const checkers = {
     objectIsValid(id) {
@@ -12,106 +14,65 @@ const checkers = {
 }
 
 router.get('/notes', async ctx => {
-    const db = getDb()
-    const dbNotes = await db.collection(`test`).find({}).toArray()
-
     ctx.body = {
-        notes: dbNotes
+        notes: await getNotes()
     }
+
     console.log('notes page')
 })
 
 router.get('/note', async ctx => {
-    ctx.body = 'create note'
+    ctx.body = {ok: 1}
 
     console.log('create note')
 })
 
 router.get('/note/:id', async ctx => {
-    const db = getDb()
     const id = ctx.params.id
 
-    if (!checkers.objectIsValid(id)) ctx.throw(400, 'is is not valid')
+    if (!checkers.objectIsValid(id)) {
+        throwApiError(400, 'id is not valid')
+    }
 
-    const note = await db.collection(`test`).findOne({_id: ObjectId(id)})
+    const note = await getNoteById(id)
 
     if (note) {
         ctx.body = note
     } else {
-        ctx.throw(400, `note with id ${id} is not found`)
+        throwApiError(404, `note with id ${id} is not found`)
     }
 })
 
-router.get('/update/:id', async ctx => {
-    const db = getDb()
-
-    await checkUserAccessRights(ctx, db, PERMISSIONS.updateNote)
-
-    const id = ctx.params.id
-
-    if (!checkers.objectIsValid(id)) ctx.throw(400, 'id is not valid')
-
-    const note = await db.collection(`test`).findOne({_id: ObjectId(id)})
-
-    if (note) {
-        ctx.body = note
-    } else {
-        ctx.throw(404, `note with id ${id} is not found`)
-    }
-})
-
-router.post('/note', upload.none(), async ctx => {
-    const db = getDb()
+router.post('/create-note', upload.none(), async ctx => {
     await validators.noteValidator(ctx.request.body)
 
-    const {title} = ctx.request.body
-    const existingNote = await db.collection(`test`).findOne({title: title})
-
-    if (existingNote) {
-        ctx.throw(409, `заметка с таким заголовком уже существует.`)
-    }
-
-    const result = await db.collection(`test`).insertOne(ctx.request.body)
-
-    ctx.body = result.ops[0]
+    const result = await createNote(ctx.request.body)
+    ctx.body = result
 
     console.log('create note completed')
 })
 
 router.put('/update/:id', upload.none(), async ctx => {
-    const db = getDb()
+    await checkPermissionByRoles(ctx.user.roles, PERMISSIONS.updateNote)
 
     await validators.noteValidator(ctx.request.body)
+    const {id} = ctx.request.body
 
-    const resultValidation = await validators.noteValidator(ctx.request.body)
+    await updateNote(ctx.request.body)
 
-    if (!resultValidation) console.error(validators.noteValidator.errors)
+    const note = await getNoteById(id)
 
-    const {id, title, note, labels, publication_date} = ctx.request.body
-
-    await db
-        .collection(`test`)
-        .updateOne({_id: ObjectId(id)}, {
-            $set: {
-                title: title,
-                note: note,
-                labels: labels,
-                publication_date: publication_date
-            }
-        })
-
-    ctx.body = {id}
+    ctx.body = {note}
 })
 
 router.delete('/note/:id', async ctx => {
-    const db = getDb()
     const id = ctx.params.id
 
-    if (!checkers.objectIsValid(id)) ctx.throw(400, `id is not valid`)
+    if (!checkers.objectIsValid(id)) {
+        throwApiError(400, `id is not valid`)
+    }
 
-    const note = await db.collection(`test`).findOne({id: id})
-
-    await db.collection(`test`).deleteOne({_id: ObjectId(id)})
+    await deleteNote(id)
 
     ctx.body = {id}
 })
