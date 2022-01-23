@@ -1,5 +1,5 @@
 const Ajv = require('ajv').default
-const ajv = require('ajv-formats')(new Ajv({useDefaults: true}))
+const ajv = require('ajv-formats')(new Ajv({useDefaults: true, allErrors: true}))
 
 const noteCreationScheme = {
     $async: true,
@@ -34,22 +34,26 @@ const noteCreationScheme = {
     required: ['title', 'note']
 }
 
+const loginAndPassword = {
+    login: {
+        type: 'string',
+        minLength: 2,
+        maxLength: 16
+    },
+    password: {
+        type: 'string',
+        minLength: 3
+    }
+}
+
 const userRegistrationScheme = {
     $async: true,
     type: 'object',
     properties: {
-        login: {
-            type: 'string',
-            minLength: 2,
-            maxLength: 16
-        },
+        ...loginAndPassword,
         userName: {
-            type: 'string',
-        },
-        password: {
-            type: 'string',
-            minLength: 3,
-        },
+            type: 'string'
+        }
     },
     required: ['login', 'userName', 'password']
 }
@@ -58,12 +62,7 @@ const userAuthorizationScheme = {
     $async: true,
     type: 'object',
     properties: {
-        login: {
-            type: 'string',
-        },
-        password: {
-            type: 'string',
-        },
+        ...loginAndPassword,
     },
     required: ['login', 'password']
 }

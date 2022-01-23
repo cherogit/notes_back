@@ -1,16 +1,52 @@
 const {router, upload} = require('./router')
-const ObjectId = require('mongodb').ObjectID
-const {getDb} = require('../db')
-const {COOKIE_NAME} = require('../constants')
+const {COOKIE_NAME, PERMISSIONS} = require('../constants')
 const validators = require('../utils/schemes')
-const {createUser, checkUserLoginAndPasswordAndGetUser, generateAndSafeCookie} = require('../processors')
+const {getRolesPermissions, checkPermissionByRoles} = require('../processors/permissions')
+const {
+    getAllUsersSanitized,
+    createUser,
+    checkUserLoginAndPasswordAndGetUser,
+    generateAndSaveCookie,
+    deleteCookie, updateNote, getNoteById
+} = require('../processors')
 
 router.get('/self', async ctx => {
-    console.log(ctx.user)
+    const permissions = await getRolesPermissions(ctx.user.roles)
 
     ctx.body = {
-        userName: ctx.user.userName
+        userName: ctx.user.userName,
+        permissions,
     }
+})
+
+router.get('/users', async ctx => {
+    const listOfUsers = await getAllUsersSanitized()
+
+    console.log(2, listOfUsers)
+
+    ctx.body = {
+        users: listOfUsers
+    }
+})
+
+router.put('/updateRoles', upload.none(), async ctx => {
+    const {id, roles} = ctx.request.body
+
+    console.log(id, roles)
+
+    ctx.body = {
+        ok: 1
+    }
+    // await checkPermissionByRoles(ctx.user.roles, PERMISSIONS.updateNote)
+    //
+    // await validators.noteValidator(ctx.request.body)
+    // const {id} = ctx.request.body
+    //
+    // await updateNote(ctx.request.body)
+    //
+    // const note = await getNoteById(id)
+    //
+    // ctx.body = {note}
 })
 
 router.post('/registration', upload.none(), async ctx => {
@@ -18,10 +54,11 @@ router.post('/registration', upload.none(), async ctx => {
 
     const {login, userName, password} = ctx.request.body
     const user = await createUser(login, userName, password)
-    const cookie = await generateAndSafeCookie(user._id)
+    console.log('user', user)
+    const cookie = await generateAndSaveCookie(user._id)
 
     ctx.cookies.set(cookie.name, cookie.value, {
-        expires: cookie.expires,
+        expires: cookie.expires
     })
 
     console.log(`Welcome, ${user.userName}`)
@@ -34,10 +71,10 @@ router.post('/auth', upload.none(), async ctx => {
 
     const {login, password} = ctx.request.body
     const user = await checkUserLoginAndPasswordAndGetUser(login, password)
-    const cookie = await generateAndSafeCookie(user._id)
+    const cookie = await generateAndSaveCookie(user._id)
 
     ctx.cookies.set(cookie.name, cookie.value, {
-        expires: cookie.expires,
+        expires: cookie.expires
     })
 
     console.log('auth completed')
@@ -45,29 +82,14 @@ router.post('/auth', upload.none(), async ctx => {
 })
 
 router.get('/logout', async ctx => {
-    const db = getDb()
-
-    if (!ctx.user) return ctx.throw(403, 'User is not defined')
-    // Не совсем понимаю для чего данная проверка, при каких случаях она отработает?
-
     const cookieValue = ctx.cookies.get(COOKIE_NAME)
 
-    await db
-        .collection(`users`)
-        .updateOne(
-            {
-                _id: ObjectId(ctx.user._id)
-            },
-            {
-                $unset: {
-                    [`cookies.${cookieValue}`]: ''
-                }
-            }
-        )
+    await deleteCookie(ctx.user._id, cookieValue)
 
     ctx.cookies.set(COOKIE_NAME)
 
-    ctx.body = 'Logout completed'
-
     console.log('Logout completed')
+
+    ctx.body = {ok: 1}
+
 })
