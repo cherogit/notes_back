@@ -7,7 +7,7 @@ const {
     createUser,
     checkUserLoginAndPasswordAndGetUser,
     generateAndSaveCookie,
-    deleteCookie, updateNote, getNoteById
+    deleteCookie, updateNote, getNoteById, createNote, changeUsersRoles
 } = require('../processors')
 
 router.get('/self', async ctx => {
@@ -22,7 +22,7 @@ router.get('/self', async ctx => {
 router.get('/users', async ctx => {
     const listOfUsers = await getAllUsersSanitized()
 
-    console.log(2, listOfUsers)
+    // console.log(2, listOfUsers)
 
     ctx.body = {
         users: listOfUsers
@@ -30,14 +30,12 @@ router.get('/users', async ctx => {
 })
 
 router.put('/updateRoles', upload.none(), async ctx => {
-    const {id, roles} = ctx.request.body
+    // await checkPermissionByRoles(ctx.user.roles, PERMISSIONS.changeUserRoles)
+    const users = ctx.request.body
 
-    console.log(id, roles)
+    const result = await changeUsersRoles(ctx.request.body)
+    ctx.body = result
 
-    ctx.body = {
-        ok: 1
-    }
-    // await checkPermissionByRoles(ctx.user.roles, PERMISSIONS.updateNote)
     //
     // await validators.noteValidator(ctx.request.body)
     // const {id} = ctx.request.body

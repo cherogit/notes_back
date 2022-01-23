@@ -122,17 +122,6 @@ exports.updateNote = async (requestBody) => {
     const db = getDb()
     const {id, title, note, labels, publication_date} = requestBody
 
-    // const result = await db
-    //     .collection(`test`)
-    //     .updateOne({_id: ObjectId(id)}, {
-    //         $set: {
-    //             title: title,
-    //             note: note,
-    //             labels: labels,
-    //             publication_date: publication_date
-    //         }
-    //     })
-
     const result = await db
         .collection(`test`)
         .findOneAndUpdate({_id: ObjectId(id)}, {
@@ -145,8 +134,25 @@ exports.updateNote = async (requestBody) => {
         }, {
             returnDocument: ReturnDocument.AFTER,
         })
+}
 
-    // console.log(result)
+exports.changeUsersRoles = async users => {
+    const db = getDb()
+
+    if (users.length) {
+        for (const user of users) {
+            console.log(666, user)
+            await db
+                .collection(`users`)
+                .findOneAndUpdate({_id: ObjectId(user.id)}, {
+                    $set: {
+                        roles: user.roles,
+                    }
+                }, {
+                    returnDocument: ReturnDocument.AFTER,
+                })
+        }
+    }
 }
 
 exports.deleteNote = async (noteId) => {
