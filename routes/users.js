@@ -7,7 +7,7 @@ const {
     createUser,
     checkUserLoginAndPasswordAndGetUser,
     generateAndSaveCookie,
-    deleteCookie, updateNote, getNoteById, createNote, changeUsersRoles
+    deleteCookie, updateNote, getNoteById, createNote, changeUsersRoles, getUserIdByCookie
 } = require('../processors')
 
 router.get('/self', async ctx => {
@@ -22,29 +22,24 @@ router.get('/self', async ctx => {
 router.get('/users', async ctx => {
     const listOfUsers = await getAllUsersSanitized()
 
-    // console.log(2, listOfUsers)
-
     ctx.body = {
         users: listOfUsers
     }
 })
 
 router.put('/updateRoles', upload.none(), async ctx => {
-    // await checkPermissionByRoles(ctx.user.roles, PERMISSIONS.changeUserRoles)
+    const user = await getUserIdByCookie(ctx.cookies.get(COOKIE_NAME))
+    await checkPermissionByRoles(user.roles, PERMISSIONS.changeUserRoles)
+
     const users = ctx.request.body
 
-    const result = await changeUsersRoles(ctx.request.body)
-    ctx.body = result
+    await changeUsersRoles(users)
 
-    //
-    // await validators.noteValidator(ctx.request.body)
-    // const {id} = ctx.request.body
-    //
-    // await updateNote(ctx.request.body)
-    //
-    // const note = await getNoteById(id)
-    //
-    // ctx.body = {note}
+    const listOfUsers = await getAllUsersSanitized()
+
+    ctx.body = {
+        users: listOfUsers
+    }
 })
 
 router.post('/registration', upload.none(), async ctx => {
@@ -52,7 +47,6 @@ router.post('/registration', upload.none(), async ctx => {
 
     const {login, userName, password} = ctx.request.body
     const user = await createUser(login, userName, password)
-    console.log('user', user)
     const cookie = await generateAndSaveCookie(user._id)
 
     ctx.cookies.set(cookie.name, cookie.value, {

@@ -90,6 +90,24 @@ exports.deleteCookie = async (userId, cookieValue) => {
         )
 }
 
+exports.getUserIdByCookie = async (cookieValue) => {
+    const db = getDb()
+
+    const user = await db
+        .collection(`users`)
+        .findOne({
+            [`cookies.${cookieValue}.name`]: COOKIE_NAME,
+            [`cookies.${cookieValue}.value`]: cookieValue
+        }, {
+            projection: {
+                hashedPassword: 0,
+                cookies: 0
+            }
+        })
+
+    return user
+}
+
 exports.getNotes = async () => { // Note[]
     const db = getDb()
     const dbNotes = await db.collection(`test`).find({}).toArray()
@@ -132,7 +150,7 @@ exports.updateNote = async (requestBody) => {
                 publication_date: publication_date
             }
         }, {
-            returnDocument: ReturnDocument.AFTER,
+            returnDocument: ReturnDocument.AFTER
         })
 }
 
@@ -141,15 +159,14 @@ exports.changeUsersRoles = async users => {
 
     if (users.length) {
         for (const user of users) {
-            console.log(666, user)
             await db
                 .collection(`users`)
                 .findOneAndUpdate({_id: ObjectId(user.id)}, {
                     $set: {
-                        roles: user.roles,
+                        roles: user.roles
                     }
                 }, {
-                    returnDocument: ReturnDocument.AFTER,
+                    returnDocument: ReturnDocument.AFTER
                 })
         }
     }
