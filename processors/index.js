@@ -12,10 +12,13 @@ const getUser = exports.getUser = async (userId) => {
     return user
 }
 
-exports.getAllUsersSanitized = async () => {
+exports.getUsersSanitized = async (userIds) => {
     const db = getDb()
+    const filter = Array.isArray(userIds)
+        ? {_id: {$in: userIds.map(id => ObjectId(id))}}
+        : {}
 
-    const listOfUsers = await db.collection(`users`).find({}, {projection: {login: 1, userName: 1, roles: 1}}).toArray()
+    const listOfUsers = await db.collection(`users`).find(filter, {projection: {login: 1, userName: 1, roles: 1}}).toArray()
 
     return listOfUsers
 }
@@ -88,24 +91,6 @@ exports.deleteCookie = async (userId, cookieValue) => {
                 }
             }
         )
-}
-
-exports.getUserIdByCookie = async (cookieValue) => {
-    const db = getDb()
-
-    const user = await db
-        .collection(`users`)
-        .findOne({
-            [`cookies.${cookieValue}.name`]: COOKIE_NAME,
-            [`cookies.${cookieValue}.value`]: cookieValue
-        }, {
-            projection: {
-                hashedPassword: 0,
-                cookies: 0
-            }
-        })
-
-    return user
 }
 
 exports.getNotes = async () => { // Note[]

@@ -3,11 +3,12 @@ const {COOKIE_NAME, PERMISSIONS} = require('../constants')
 const validators = require('../utils/schemes')
 const {getRolesPermissions, checkPermissionByRoles} = require('../processors/permissions')
 const {
-    getAllUsersSanitized,
+    getUsersSanitized,
     createUser,
     checkUserLoginAndPasswordAndGetUser,
     generateAndSaveCookie,
-    deleteCookie, updateNote, getNoteById, createNote, changeUsersRoles, getUserIdByCookie
+    deleteCookie,
+    changeUsersRoles
 } = require('../processors')
 
 router.get('/self', async ctx => {
@@ -20,7 +21,7 @@ router.get('/self', async ctx => {
 })
 
 router.get('/users', async ctx => {
-    const listOfUsers = await getAllUsersSanitized()
+    const listOfUsers = await getUsersSanitized()
 
     ctx.body = {
         users: listOfUsers
@@ -28,14 +29,13 @@ router.get('/users', async ctx => {
 })
 
 router.put('/updateRoles', upload.none(), async ctx => {
-    const user = await getUserIdByCookie(ctx.cookies.get(COOKIE_NAME))
-    await checkPermissionByRoles(user.roles, PERMISSIONS.changeUserRoles)
+    await checkPermissionByRoles(ctx.user.roles, PERMISSIONS.changeUserRoles)
 
     const users = ctx.request.body
 
     await changeUsersRoles(users)
 
-    const listOfUsers = await getAllUsersSanitized()
+    const listOfUsers = await getUsersSanitized(users.map(user => user.id))
 
     ctx.body = {
         users: listOfUsers
