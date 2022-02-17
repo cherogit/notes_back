@@ -18,6 +18,8 @@ exports.getUsersSanitized = async (userIds) => {
         ? {_id: {$in: userIds.map(id => ObjectId(id))}}
         : {}
 
+    console.log(filter)
+
     const listOfUsers = await db.collection(`users`).find(filter, {projection: {login: 1, userName: 1, roles: 1}}).toArray()
 
     return listOfUsers

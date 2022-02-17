@@ -28,7 +28,7 @@ router.get('/users', async ctx => {
     }
 })
 
-router.put('/updateRoles', upload.none(), async ctx => {
+router.put('/updateUsers', upload.none(), async ctx => {
     await checkPermissionByRoles(ctx.user.roles, PERMISSIONS.changeUserRoles)
 
     const users = ctx.request.body
