@@ -8,7 +8,8 @@ const {
     checkUserLoginAndPasswordAndGetUser,
     generateAndSaveCookie,
     deleteCookie,
-    changeUsersRoles
+    changeUsersRoles,
+    checkTheValidityOfTheRoles
 } = require('../processors')
 
 router.get('/self', async ctx => {
@@ -32,6 +33,11 @@ router.put('/updateUsers', upload.none(), async ctx => {
     await checkPermissionByRoles(ctx.user.roles, PERMISSIONS.changeUserRoles)
 
     const users = ctx.request.body
+
+    for (const user of users) {
+        console.log(user, user.roles)
+        await checkTheValidityOfTheRoles(user.roles)
+    }
 
     await changeUsersRoles(users)
 

@@ -2,7 +2,7 @@ const {ObjectId, ReturnDocument} = require('mongodb')
 const {getDb} = require('../db')
 const {throwApiError} = require('../utils')
 const {hashPassword} = require('../utils/hashPassword')
-const {COOKIE_NAME} = require('../constants')
+const {COOKIE_NAME, ROLES} = require('../constants')
 
 const getUser = exports.getUser = async (userId) => {
     const db = getDb()
@@ -18,9 +18,13 @@ exports.getUsersSanitized = async (userIds) => {
         ? {_id: {$in: userIds.map(id => ObjectId(id))}}
         : {}
 
-    console.log(filter)
-
-    const listOfUsers = await db.collection(`users`).find(filter, {projection: {login: 1, userName: 1, roles: 1}}).toArray()
+    const listOfUsers = await db.collection(`users`).find(filter, {
+        projection: {
+            login: 1,
+            userName: 1,
+            roles: 1
+        }
+    }).toArray()
 
     return listOfUsers
 }
@@ -139,6 +143,15 @@ exports.updateNote = async (requestBody) => {
         }, {
             returnDocument: ReturnDocument.AFTER
         })
+}
+
+exports.checkTheValidityOfTheRoles = async roles => {
+    const errorMessage = 'User roles are not valid'
+    if (roles.length > 0 && roles.some(role => !ROLES[role])) {
+        throwApiError(400, errorMessage)
+    }
+
+    return true
 }
 
 exports.changeUsersRoles = async users => {
