@@ -145,10 +145,14 @@ exports.updateNote = async (requestBody) => {
         })
 }
 
-exports.checkTheValidityOfTheRoles = async roles => {
-    const errorMessage = 'User roles are not valid'
-    if (roles.length > 0 && roles.some(role => !ROLES[role])) {
-        throwApiError(400, errorMessage)
+exports.checkTheValidityOfTheRoles = async users => {
+    const db = getDb()
+    const roles = (await db.collection(`roles`).find({}).toArray()).map(role => role.key)
+
+    for (const user of users) {
+        if (user.roles.length > 0 && user.roles.some(role => !roles.includes(role))) {
+            throwApiError(400, `User roles with login ${user.login} are not valid`)
+        }
     }
 
     return true

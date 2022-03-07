@@ -34,11 +34,7 @@ router.put('/updateUsers', upload.none(), async ctx => {
 
     const users = ctx.request.body
 
-    for (const user of users) {
-        console.log(user, user.roles)
-        await checkTheValidityOfTheRoles(user.roles)
-    }
-
+    await checkTheValidityOfTheRoles(users)
     await changeUsersRoles(users)
 
     const listOfUsers = await getUsersSanitized(users.map(user => user.id))

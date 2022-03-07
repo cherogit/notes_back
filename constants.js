@@ -5,9 +5,3 @@ exports.PERMISSIONS = {
     updateNote: `updateNote`,
     deleteNote: `deleteNote`
 }
-
-exports.ROLES = {
-    moderator: `moderator`,
-    superUser: `superUser`,
-    user: `user`,
-}
