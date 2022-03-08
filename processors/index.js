@@ -2,7 +2,7 @@ const {ObjectId, ReturnDocument} = require('mongodb')
 const {getDb} = require('../db')
 const {throwApiError} = require('../utils')
 const {hashPassword} = require('../utils/hashPassword')
-const {COOKIE_NAME} = require('../constants')
+const {COOKIE_NAME, ROLES} = require('../constants')
 
 const getUser = exports.getUser = async (userId) => {
     const db = getDb()
@@ -12,10 +12,19 @@ const getUser = exports.getUser = async (userId) => {
     return user
 }
 
-exports.getAllUsersSanitized = async () => {
+exports.getUsersSanitized = async (userIds) => {
     const db = getDb()
+    const filter = Array.isArray(userIds)
+        ? {_id: {$in: userIds.map(id => ObjectId(id))}}
+        : {}
 
-    const listOfUsers = await db.collection(`users`).find({}, {projection: {login: 1, userName: 1, roles: 1}}).toArray()
+    const listOfUsers = await db.collection(`users`).find(filter, {
+        projection: {
+            login: 1,
+            userName: 1,
+            roles: 1
+        }
+    }).toArray()
 
     return listOfUsers
 }
@@ -122,17 +131,6 @@ exports.updateNote = async (requestBody) => {
     const db = getDb()
     const {id, title, note, labels, publication_date} = requestBody
 
-    // const result = await db
-    //     .collection(`test`)
-    //     .updateOne({_id: ObjectId(id)}, {
-    //         $set: {
-    //             title: title,
-    //             note: note,
-    //             labels: labels,
-    //             publication_date: publication_date
-    //         }
-    //     })
-
     const result = await db
         .collection(`test`)
         .findOneAndUpdate({_id: ObjectId(id)}, {
@@ -143,10 +141,39 @@ exports.updateNote = async (requestBody) => {
                 publication_date: publication_date
             }
         }, {
-            returnDocument: ReturnDocument.AFTER,
+            returnDocument: ReturnDocument.AFTER
         })
+}
 
-    // console.log(result)
+exports.checkTheValidityOfTheRoles = async users => {
+    const db = getDb()
+    const roles = (await db.collection(`roles`).find({}).toArray()).map(role => role.key)
+
+    for (const user of users) {
+        if (user.roles.length > 0 && user.roles.some(role => !roles.includes(role))) {
+            throwApiError(400, `User roles with login ${user.login} are not valid`)
+        }
+    }
+
+    return true
+}
+
+exports.changeUsersRoles = async users => {
+    const db = getDb()
+
+    if (users.length) {
+        for (const user of users) {
+            await db
+                .collection(`users`)
+                .findOneAndUpdate({_id: ObjectId(user.id)}, {
+                    $set: {
+                        roles: user.roles
+                    }
+                }, {
+                    returnDocument: ReturnDocument.AFTER
+                })
+        }
+    }
 }
 
 exports.deleteNote = async (noteId) => {
